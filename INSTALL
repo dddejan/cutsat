@@ -2,7 +2,7 @@ Needed dependencies:
 
 sudo apt-get install cmake libcln-dev coinor-libcoinutils-dev libboost1.40-dev libboost-program-options1.40-dev libboost-test1.40-dev libboost-regex1.40-dev
 
-To compile (if cutsat is unpacked in $CUTSAT_HOME:
+To compile (if cutsat is unpacked in $CUTSAT_HOME):
 
 cd build
 
@@ -12,7 +12,7 @@ cmake  -DCMAKE_BUILD_TYPE=Debug $CUTSAT_HOME
 
 * release mode:        
 
-cmake  -DCMAKE_BUILD_TYPE=Release $CUTSAT_HOMEB
+cmake  -DCMAKE_BUILD_TYPE=Release $CUTSAT_HOME
 
 * static release mode: 
 
