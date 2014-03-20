@@ -1,0 +1,4 @@
+* #variable= 5 #constraint= 2
++5 x1 +4 x2 +2 x3 +1 x4 >= 5 ;
+-1 x1 >= 0 ;
+-1 x3 >= 0 ;

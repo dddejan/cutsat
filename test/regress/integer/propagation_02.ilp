@@ -1,0 +1,5 @@
+* If x1 is less than 0 then x0 must be bigger than 0
++1 x0 +1 x1 >= 0 ;
+-1 x1 >= 0 ;
+
+

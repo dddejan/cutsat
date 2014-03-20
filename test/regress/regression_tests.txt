@@ -1,0 +1,84 @@
+test/regress/clause/preprocess_01.opb --check-model -e sat 
+test/regress/clause/preprocess_02.opb --check-model -e sat
+test/regress/clause/preprocess_03.opb -e unsat
+test/regress/clause/propagation_01.opb --check-model -e sat
+test/regress/clause/propagation_02.opb --check-model -e sat
+test/regress/clause/propagation_03.opb --check-model -e sat
+test/regress/clause/propagation_04.opb --check-model -e sat
+test/regress/clause/propagation_05.opb --check-model -e sat
+test/regress/clause/propagation_06.opb --check-model -e sat
+test/regress/clause/propagation_07.opb --check-model -e sat
+test/regress/clause/parity/par8-1-c.cnf --check-model -e sat
+test/regress/clause/parity/par8-1.cnf   --check-model -e sat 
+test/regress/clause/parity/par8-2-c.cnf --check-model -e sat
+test/regress/clause/parity/par8-2.cnf   --check-model -e sat  
+test/regress/clause/parity/par8-3-c.cnf --check-model -e sat
+test/regress/clause/parity/par8-3.cnf   --check-model -e sat
+test/regress/clause/parity/par8-4-c.cnf	--check-model -e sat
+test/regress/clause/parity/par8-4.cnf   --check-model -e sat
+test/regress/clause/parity/par8-5-c.cnf --check-model -e sat
+test/regress/clause/parity/par8-5.cnf   --check-model -e sat
+test/regress/clause/3sat/uf20-010.cnf   --check-model -e sat
+test/regress/clause/3sat/uf20-0111.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0145.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-019.cnf   --check-model -e sat
+test/regress/clause/3sat/uf20-0359.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0416.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0546.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0678.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0684.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0693.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0710.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-075.cnf   --check-model -e sat
+test/regress/clause/3sat/uf20-0777.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0839.cnf  --check-model -e sat
+test/regress/clause/3sat/uf20-0962.cnf  --check-model -e sat
+test/regress/cardinality/preprocess_01.opb --check-model -e sat
+test/regress/cardinality/preprocess_02.opb --check-model -e sat
+test/regress/cardinality/preprocess_03.opb -e unsat
+test/regress/cardinality/preprocess_04.opb --check-model -e sat
+test/regress/cardinality/propagation_01.opb --check-model -e sat
+test/regress/cardinality/propagation_02.opb --check-model -e sat
+test/regress/cardinality/propagation_03.opb --check-model -e sat
+test/regress/cardinality/propagation_04.opb --check-model -e sat
+test/regress/cardinality/propagation_05.opb --check-model -e sat
+test/regress/cardinality/propagation_06.opb --check-model -e sat
+test/regress/cardinality/propagation_07.opb --check-model -e sat
+test/regress/cardinality/propagation_08.opb --check-model -e sat
+test/regress/cardinality/propagation_09.opb --check-model -e sat
+test/regress/cardinality/packing_01.opb --check-model -e sat
+test/regress/cardinality/packing_02.opb -e unsat
+test/regress/cardinality/packing_03.opb --check-model -e sat
+test/regress/cardinality/packing_04.opb -e unsat
+test/regress/cardinality/packing_05.opb --check-model -e sat
+test/regress/cardinality/packing_06.opb -e unsat
+test/regress/cardinality/repropagation_01.opb --check-model -e sat
+test/regress/cardinality/repropagation_02.opb -e unsat
+test/regress/integer/conflict_01.ilp --check-model -e sat
+test/regress/integer/conflict_02.ilp --check-model -e sat
+test/regress/integer/conflict_03.ilp --check-model -e sat
+test/regress/integer/conflict_04.ilp --check-model -e sat
+test/regress/integer/conflict_05.ilp -e unsat
+test/regress/integer/prime-cone/prime-cone-sat-3.smt --check-model -e sat
+test/regress/integer/prime-cone/prime-cone-sat-4.smt --check-model -e sat
+test/regress/integer/prime-cone/prime-cone-sat-5.smt --check-model -e sat
+test/regress/integer/prime-cone/prime-cone-sat-7.smt --check-model -e sat
+test/regress/integer/prime-cone/prime-cone-sat-8.smt --check-model -e sat
+test/regress/integer/prime-cone/prime-cone-sat-9.smt --check-model -e sat
+test/regress/integer/prime-cone/prime-cone-sat-10.smt --check-model -e sat
+test/regress/integer/prime-cone/prime-cone-unsat-3.smt -e unsat
+test/regress/integer/prime-cone/prime-cone-unsat-4.smt -e unsat
+test/regress/integer/prime-cone/prime-cone-unsat-5.smt -e unsat
+test/regress/integer/prime-cone/prime-cone-unsat-6.smt -e unsat
+test/regress/integer/prime-cone/prime-cone-unsat-7.smt -e unsat
+test/regress/integer/prime-cone/prime-cone-unsat-8.smt -e unsat
+test/regress/integer/prime-cone/prime-cone-unsat-9.smt -e unsat
+test/regress/integer/prime-cone/prime-cone-unsat-10.smt -e unsat
+test/regress/integer/pigeon-hole/pigeon-hole-2.opb -e unsat
+test/regress/integer/pigeon-hole/pigeon-hole-3.opb -e unsat
+test/regress/integer/pigeon-hole/pigeon-hole-4.opb -e unsat
+test/regress/integer/pigeon-hole/pigeon-hole-5.opb -e unsat
+test/regress/integer/pigeon-hole/pigeon-hole-6.opb -e unsat
+test/regress/integer/pigeon-hole/pigeon-hole-7.opb -e unsat
+test/regress/integer/pigeon-hole/pigeon-hole-8.opb -e unsat
+test/regress/integer/pigeon-hole/pigeon-hole-9.opb -e unsat

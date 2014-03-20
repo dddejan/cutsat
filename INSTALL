@@ -1,0 +1,26 @@
+Needed dependencies:
+
+sudo apt-get install cmake libcln-dev coinor-libcoinutils-dev libboost1.40-dev libboost-program-options1.40-dev libboost-test1.40-dev libboost-regex1.40-dev
+
+To compile (if cutsat is unpacked in $CUTSAT_HOME:
+
+cd build
+
+* debug mode:          
+
+cmake  -DCMAKE_BUILD_TYPE=Debug $CUTSAT_HOME
+
+* release mode:        
+
+cmake  -DCMAKE_BUILD_TYPE=Release $CUTSAT_HOMEB
+
+* static release mode: 
+
+cmake  -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC_EXECUTABLES=YES $CUTSAT_HOME
+
+make cutsat
+
+NOTE: to switch from dynamic to static build you MUST CLEAR THE CMAKE CACHE
+
+To test: make check
+

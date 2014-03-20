@@ -1,0 +1,2 @@
+* #variable= 5 #constraint= 2
++2 x1 +3 x2 >= 1 ;

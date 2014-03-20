@@ -1,0 +1,1 @@
+add_library(propagators propagators.cpp clause_propagator.cpp cardinality_propagator.cpp integer_propagator.cpp)

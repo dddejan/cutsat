@@ -1,0 +1,13 @@
+Source: cutsat
+Section: math
+Priority: extra
+Maintainer: Dejan Jovanovic <dejan@cs.nyu.edu>
+Build-Depends: debhelper (>= 7.0.50~), cmake, cdbs, libcln-dev, coinor-libcoinutils-dev, libboost-dev, libboost-program-options-dev, libboost-test-dev
+Standards-Version: 3.8.4
+Homepage: http://www.cs.nyu.edu/~dejan/cutsat
+
+Package: cutsat
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: A feasibility solver for linear integer problems
+ 

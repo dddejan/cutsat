@@ -1,0 +1,2 @@
+add_library(constraints_test constraint_manager_test.cpp)
+
