@@ -943,6 +943,8 @@ void Solver::printProblemSmt2(std::ostream& output, ConstraintRef implied) const
       }
           output << "))" << endl;
   }
+
+  output << "(check-sat)" << endl;
 }
 
 void Solver::printProblemMps(std::ostream& output, ConstraintRef implied) const {
