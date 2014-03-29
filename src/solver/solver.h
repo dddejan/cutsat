@@ -431,8 +431,8 @@ public:
     void setLowerBound(Variable var, typename VariableTraits<type>::value_type bound) {
         assert(!hasLowerBound(var) || bound > getLowerBound<type>(var));
         if (d_status != Unsatisfiable) {
-        	d_state.enqueueEvent<MODIFICATION_LOWER_BOUND_REFINE, type>(var, bound, ConstraintManager::NullConstraint);
-            propagate();
+          d_state.enqueueEvent<MODIFICATION_LOWER_BOUND_REFINE, type>(var, bound, ConstraintManager::NullConstraint);
+          propagate();
         }
     }
 

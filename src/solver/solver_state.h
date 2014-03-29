@@ -155,6 +155,9 @@ private:
     /** The position of a variable in the queue */
     std::vector<dynamic_queue_pointer> d_variableQueuePosition;
 
+    /** Is the variable in the queue */
+    std::vector<bool> d_variableInQueue;
+
     /** All the static data of a variable */
     std::vector<VariableInfo> d_variableInfo;
 
@@ -232,6 +235,14 @@ public:
       d_backtrackVisitor(*this),
       d_dynamicOrder(true)
       {}
+
+    /**
+     * Is the variable in the decision queue.
+     */
+    bool inQueue(Variable var) const {
+        return d_variableInQueue[var.getId()];
+    }
+
 
     /**
      * Returns the next unassigned variable in the variable order.
@@ -452,19 +463,20 @@ public:
      * @param var the variable
      */
     void enqueueVariable(Variable var) {
+        assert(!inQueue(var));
         if (d_dynamicOrder) {
         	d_variableQueuePosition[var.getId()] = d_variableQueueDynamic.push(var);
         } else {
         	d_variableQueueLinear.push(var);
         }
+        d_variableInQueue[var.getId()] = true;
     }
 
     template<VariableModificationType type, bool set>
     void changeVariableHeuristicBound(Variable var) {
     	if (d_dynamicOrder) {
-    	    dynamic_queue_pointer find = d_variableQueuePosition[var.getId()];
-    		if (find != d_variableQueueDynamic.end()) {
-    			d_variableQueueDynamic.erase(find);
+            if (inQueue(var)) {
+                d_variableQueueDynamic.erase(d_variableQueuePosition[var.getId()]);
     			if (type == MODIFICATION_LOWER_BOUND_REFINE) {
     				d_variableHeuristic[var.getId()].hasLowerBound = set ? 1 : 0;
     			} else {
@@ -484,9 +496,8 @@ public:
     void bumpVariable(Variable var, double times = 1) {
     	if (d_dynamicOrder) {
     		double newValue = d_variableHeuristic[var.getId()].value + d_variableHeuristicIncrease*times;
-    		dynamic_queue_pointer find = d_variableQueuePosition[var.getId()];
-			if (find != d_variableQueueDynamic.end()) {
-				d_variableQueueDynamic.erase(find);
+			if (inQueue(var)) {
+				d_variableQueueDynamic.erase(d_variableQueuePosition[var.getId()]);
 				d_variableHeuristic[var.getId()].value = newValue;
 				d_variableQueuePosition[var.getId()] = d_variableQueueDynamic.push(var);
 			} else {
@@ -514,7 +525,9 @@ public:
     	d_backtrackVisitor.init();
         d_trail.cancelUntil(index, d_backtrackVisitor);
         if (d_inConflict) {
-        	enqueueVariable(d_conflictVariable);
+            if (!inQueue(d_conflictVariable)) {
+              enqueueVariable(d_conflictVariable);
+            }
             d_inConflict = false;
         }
     }
@@ -595,8 +608,9 @@ inline unsigned addBound(typename VariableTraits<type>::value_type const& boundV
 inline void SolverState::BacktrackVisitor::operator ()(const TrailElement& trailElement) {
 
     // Get the state of the variable
-	Variable variable = trailElement.var;
-	VariableInfo& variableInfo = d_state.d_variableInfo[variable.getId()];
+    Variable variable = trailElement.var;
+    VariableInfo& variableInfo = d_state.d_variableInfo[variable.getId()];
+
 
     // Restore the bound info
     switch((VariableModificationType)trailElement.modificationType) {
@@ -624,7 +638,9 @@ inline void SolverState::BacktrackVisitor::operator ()(const TrailElement& trail
     			  }
     		  }
     	  	  if (justAssigned) {
-        		  d_state.enqueueVariable(variable);
+        		  if (!d_state.inQueue(variable)) {
+                      d_state.enqueueVariable(variable);
+                  }
     	  		  variableInfo.setValueStatus(ValueStatusUnassigned, -1);
     	  	  }
     	  } else {
@@ -660,7 +676,9 @@ inline void SolverState::BacktrackVisitor::operator ()(const TrailElement& trail
     			  }
     		  }
     		  if (justAssigned) {
-    			  d_state.enqueueVariable(variable);
+                  if (!d_state.inQueue(variable)) {
+                      d_state.enqueueVariable(variable);
+                  }
         	  	  variableInfo.setValueStatus(ValueStatusUnassigned, -1);
     		  }
     	  } else {

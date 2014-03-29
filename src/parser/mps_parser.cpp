@@ -65,6 +65,8 @@ void MpsParser::parse() throw(ParserException) {
 
         // Add the bound constraints
         switch(type) {
+        case TypeRational:
+            assert(false);
         case TypeInteger:
             if (hasLower) addIntegerBound(LowerBound, var, NumberUtils<Integer>::ceil(varLower));
             if (hasUpper) addIntegerBound(UpperBound, var, NumberUtils<Integer>::floor(varUpper));
@@ -120,8 +122,6 @@ void MpsParser::addConstraint(BoundType type, std::vector<Variable>& vars, std::
         std::vector<Integer> coeffDenominators, Integer& cNumerator, Integer& cDenominator) {
 
     bool hasRational = false; // Does the constraint have rational variables
-    bool isCardinalityConstraint = true; // Are we dealing with a cardinality constraint
-    int negativeCount = 0; // How many negative coefficients are there
 
     Integer denominatorLCM = cln::abs(cDenominator); // Least common multiple of the denominators
 
@@ -144,26 +144,12 @@ void MpsParser::addConstraint(BoundType type, std::vector<Variable>& vars, std::
         for (unsigned i = 0; i < nLiterals; ++ i) {
             Integer& coeff = coeffNumerators[i];
             coeff *= denominatorLCM;
-            if (coeff < 0) {
-                ++ negativeCount;
-                if (coeff != -1) isCardinalityConstraint = false;
-            }
-            else if (coeff != 1) {
-                isCardinalityConstraint = false;
-            }
             coeffDenominators[i] = 1;
         }
     }
 
     assert(!hasRational);
     
-    if (isCardinalityConstraint) {
-    	if (cNumerator == 1 - negativeCount) {
-    		// It's a clause
-    		addClauseConstraint(coeffNumerators, vars);
-    	}
-    }
-
     addIntegerConstraint(coeffNumerators, vars, cNumerator);
 }
 

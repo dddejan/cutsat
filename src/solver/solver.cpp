@@ -362,7 +362,7 @@ ConstraintRef Solver::assertClauseConstraint(vector<ClauseConstraintLiteral>& li
 }
 
 ConstraintRef Solver::assertCardinalityConstraint(vector<CardinalityConstraintLiteral>& literals, unsigned& c, ConstraintClass constraintClass) {
-    CUTSAT_TRACE_FN("solver") << literals << endl;
+    CUTSAT_TRACE_FN("solver") << literals << " : " << c << endl;
 
     ConstraintRef constraint = ConstraintManager::NullConstraint;
 
@@ -566,24 +566,26 @@ void Solver::propagate()
 
 void Solver::backtrack(int backtrackIndex) {
 
-    CUTSAT_TRACE_FN("solver") << "Backtracking to index " << backtrackIndex << std::endl;
+  CUTSAT_TRACE_FN("solver") << "Backtracking to index " << backtrackIndex
+      << std::endl;
 
-    if (d_verbosity >= VERBOSITY_EXTREME) {
-    	cout << "Backtracking to trail index " << backtrackIndex << std::endl;
-    }
+  if (d_verbosity >= VERBOSITY_EXTREME) {
+    cout << "Backtracking to trail index " << backtrackIndex << std::endl;
+  }
 
-	// Undo the state
-	d_state.cancelUntil(backtrackIndex);
+  // Undo the state
+  assert(backtrackIndex >= d_state.getSafeIndex());
+  d_state.cancelUntil(backtrackIndex);
 
-    // Update the propagation index to the size of the trail
-    d_propagationTrailIndex = d_state.getTrail().getSize();
+  // Update the propagation index to the size of the trail
+  d_propagationTrailIndex = std::min(d_propagationTrailIndex, (unsigned) d_state.getTrail().getSize());
 
-	// Clean the tight constraint cache above this index
-	prop_variable_tag var_tag(VariableNull, backtrackIndex, MODIFICATION_COUNT);
-	d_tightConstraintCache.erase(d_tightConstraintCache.upper_bound(var_tag), d_tightConstraintCache.end());
+  // Clean the tight constraint cache above this index
+  prop_variable_tag var_tag(VariableNull, backtrackIndex, MODIFICATION_COUNT);
+  d_tightConstraintCache.erase(d_tightConstraintCache.upper_bound(var_tag), d_tightConstraintCache.end());
 
-	// Backtrack the propagators
-	d_propagators.cancelUntil(backtrackIndex);
+  // Backtrack the propagators
+  d_propagators.cancelUntil(backtrackIndex);
 }
 
 void Solver::checkModel() {
@@ -1116,9 +1118,9 @@ void Solver::simplifyConstraintDatabase() {
 bool Solver::isBoolean(Variable var) const {
 	int safeIndex = d_state.getSafeIndex();
 	return
-		d_state.hasLowerBound(var, safeIndex) &&
-		d_state.hasUpperBound(var, safeIndex) &&
-    	d_state.getLowerBound<TypeInteger>(var) >= 0 &&
-    	d_state.getUpperBound<TypeInteger>(var) <= 1
+          d_state.hasLowerBound(var, safeIndex) &&
+          d_state.hasUpperBound(var, safeIndex) &&
+          d_state.getLowerBound<TypeInteger>(var, safeIndex) >= 0 &&
+          d_state.getUpperBound<TypeInteger>(var, safeIndex) <= 1
     	;
 }

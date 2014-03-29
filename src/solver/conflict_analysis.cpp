@@ -260,9 +260,10 @@ ConstraintRef Solver::assertTightConstraint(const constraint_coefficient_map& co
     	std::vector<CardinalityConstraintLiteral> literals;
     	int negativeLiterals = 0;
     	for (; it != it_end; ++ it) {
-    		bool negated = it->second < 0;
-    		if (negated) { negativeLiterals ++; }
-    		literals.push_back(CardinalityConstraintLiteral(it->first, negated));
+            bool negated = it->second < 0;
+            if (negated) { negativeLiterals ++; }
+            assert(isBoolean(it->first));
+            literals.push_back(CardinalityConstraintLiteral(it->first, negated));
     	}
     	unsigned c = NumberUtils<Integer>::toInt(constant) + negativeLiterals;
     	return assertCardinalityConstraint(literals, c, CONSTRAINT_CLASS_EXPLANATION);
@@ -271,7 +272,8 @@ ConstraintRef Solver::assertTightConstraint(const constraint_coefficient_map& co
     	// Clause constraint
     	std::vector<ClauseConstraintLiteral> literals;
     	for (; it != it_end; ++ it) {
-    		literals.push_back(ClauseConstraintLiteral(it->first, it->second < 0));
+    	  assert(isBoolean(it->first));
+    	  literals.push_back(ClauseConstraintLiteral(it->first, it->second < 0));
     	}
     	return assertClauseConstraint(literals, CONSTRAINT_CLASS_EXPLANATION);
     }
@@ -798,6 +800,7 @@ void Solver::getTopTrailInfo(const constraint_coefficient_map& coefficients, Var
                 topTrailIndex = trailIndex;
                 topVariable = variable;
             }
+            break;
         }
     }
 }

@@ -32,7 +32,8 @@ Variable SolverState::decideVariable() {
     		Variable var = d_variableQueueDynamic.top();
     		d_variableQueueDynamic.pop();
     		d_variableQueuePosition[var.getId()] = d_variableQueueDynamic.end();
-    		if (!isDecided(var)) {
+            d_variableInQueue[var.getId()] = false;
+            if (!isDecided(var)) {
     			return var;
     		}
     	}
@@ -105,6 +106,7 @@ void SolverState::resize(size_t size) {
     if (size > d_variableInfo.size()) {
         d_variableHeuristic.resize(size);
         d_variableQueuePosition.resize(size);
+        d_variableInQueue.resize(size, false);
         d_variableInfo.resize(size);
         d_variableNames.resize(size);
         d_variablePhase.resize(size, true);
@@ -126,6 +128,7 @@ void SolverState::newVariable(Variable var, const char* varName, bool addToQueue
         d_variableHeuristic[varId].value = 1.0;
         d_variableQueuePosition[varId] = d_variableQueueDynamic.push(var);
         d_variableQueueLinear.push(var);
+		d_variableInQueue[varId] = true;
     }
 }
 

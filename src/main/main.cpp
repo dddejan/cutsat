@@ -242,15 +242,15 @@ void printModel(const Solver& solver)
 
 void setOptions(Solver& solver, variables_map& options) {
 
-	Verbosity verbosity = (Verbosity)options.at("verbosity").as<unsigned>();
-	solver.setVerbosity(verbosity);
+  Verbosity verbosity = (Verbosity) options.at("verbosity").as<unsigned>();
+  solver.setVerbosity(verbosity);
 
-	solver.setPropagation(options.count("disable-propagation") == 0);
-	solver.setCheckModel(options.count("check-model") > 0);
-	solver.setDynamicOrder(options.count("linear-order") == 0);
-	solver.setOutputCuts(options.count("output-cuts") > 0);
-    solver.setBoundEstimate(options.at("bound-estimate").as<unsigned>());
-    solver.setDefaultBound(options.at("default-bound").as<int>());
-    solver.setReplaceVarsWithSlacks(options.count("replace-vars-with-slacks") > 0);
-    solver.setTryFourierMotzkin(options.count("try-fourier-motzkin") > 0);
+  solver.setPropagation(options.count("disable-propagation") == 0);
+  solver.setCheckModel(options.count("check-model") > 0);
+  solver.setDynamicOrder(options.count("linear-order") == 0);
+  solver.setOutputCuts(options.count("output-cuts") > 0);
+  solver.setBoundEstimate(options.at("bound-estimate").as<unsigned>());
+  solver.setDefaultBound(options.at("default-bound").as<int>());
+  solver.setReplaceVarsWithSlacks(options.count("replace-vars-with-slacks") > 0);
+  solver.setTryFourierMotzkin(options.count("try-fourier-motzkin") > 0);
 }
