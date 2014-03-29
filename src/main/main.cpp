@@ -86,19 +86,27 @@ int main(int argc, char* argv[]) {
             	}
             }
             // If asked, print the SMT
+            bool parse_only = options.count("parse-only") > 0;
             if (options.count("output-smt") > 0) {
                 solver.printProblem(cout, OutputFormatSmt);
+                parse_only = true;
             }
-            // If asked, print the SMT
+            if (options.count("output-smt2") > 0) {
+                solver.printProblem(cout, OutputFormatSmt2);
+                parse_only = true;
+            }
+            // If asked, print the MPS
             if (options.count("output-mps") > 0) {
                 solver.printProblem(cout, OutputFormatMps);
+                parse_only = true;
             }
-            // If asked, print the SMT
+            // If asked, print the OPB
             if (options.count("output-opb") > 0) {
             	solver.printProblem(cout, OutputFormatOpb);
+                parse_only = true;
             }
             // If not parse only, solve the problem
-            if (options.count("parse-only") == 0) {
+            if (!parse_only) {
             	// Solve the problem
                 SolverStatus result = solver.solve();
                 // Output the result
@@ -166,6 +174,8 @@ void getOptions(int argc, char* argv[], variables_map& variables) {
                 "Output the SMT queries to prove the cuts for each conflict")
         ("output-smt",
                 "Output the problem in SMT format")
+        ("output-smt2",
+                "Output the problem in SMT2 format")
         ("output-mps",
                 "Output the problem in MPS format")
         ("output-opb",
@@ -245,7 +255,7 @@ void setOptions(Solver& solver, variables_map& options) {
   Verbosity verbosity = (Verbosity) options.at("verbosity").as<unsigned>();
   solver.setVerbosity(verbosity);
 
-  solver.setPropagation(options.count("disable-propagation") == 0);
+  solver.setPropagation(options.count("disable-propagation") == 0 && options.count("parse-only") == 0);
   solver.setCheckModel(options.count("check-model") > 0);
   solver.setDynamicOrder(options.count("linear-order") == 0);
   solver.setOutputCuts(options.count("output-cuts") > 0);

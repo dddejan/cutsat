@@ -573,6 +573,12 @@ public:
 
     void printProblem(std::ostream& out, OutputFormat format, ConstraintRef implied = ConstraintManager::NullConstraint) const;
 
+    void printProblemSmt(std::ostream& out, ConstraintRef implied = ConstraintManager::NullConstraint) const;
+    void printProblemSmt2(std::ostream& out, ConstraintRef implied = ConstraintManager::NullConstraint) const;
+    void printProblemMps(std::ostream& out, ConstraintRef implied = ConstraintManager::NullConstraint) const;
+    void printProblemOpb(std::ostream& out, ConstraintRef implied = ConstraintManager::NullConstraint) const;
+    void printProblemCnf(std::ostream& out, ConstraintRef implied = ConstraintManager::NullConstraint) const;
+
     void addVaribleToTrace(const char* varName) {
     	if (d_variableNameToVariable.find(varName) != d_variableNameToVariable.end()) {
     		d_variablesToTrace.push_back(d_variableNameToVariable[varName]);

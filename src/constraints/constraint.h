@@ -127,6 +127,13 @@ public:
         		out << "(~ var[" << d_variable << "])";
         	}
         	break;
+        case OutputFormatSmt2:
+                if (d_negated == 0) {
+                        out << "var[" << d_variable << "]";
+                } else {
+                        out << "(- var[" << d_variable << "])";
+                }
+                break;
         default:
         	if (d_negated == 0) {
         		out << "var[" << d_variable << "]";
@@ -148,6 +155,13 @@ public:
         		out << "(~ " << name << ")";
         	}
         	break;
+        case OutputFormatSmt2:
+                if (d_negated == 0) {
+                        out << name;
+                } else {
+                        out << "(- " << name << ")";
+                }
+                break;
         case OutputFormatCnf:
         	if (d_negated == 0) {
         		out << (d_variable + 1);
@@ -223,6 +237,13 @@ public:
         		out << "(~ var[" << d_variable << "])";
         	}
         	break;
+        case OutputFormatSmt2:
+                if (d_negated == 0) {
+                        out << "var[" << d_variable << "]";
+                } else {
+                        out << "(- var[" << d_variable << "])";
+                }
+                break;
         default:
         	if (d_negated == 0) {
         		out << "var[" << d_variable << "]";
@@ -244,6 +265,13 @@ public:
         		out << "(~ " << name << ")";
         	}
         	break;
+        case OutputFormatSmt2:
+                if (d_negated == 0) {
+                        out << name;
+                } else {
+                        out << "(- " << name << ")";
+                }
+                break;
         case OutputFormatCnf:
         	if (d_negated == 0) {
         		out << (d_variable + 1);
@@ -317,6 +345,19 @@ public:
         		out << "(* (~ " << -d_coefficient << ") var[" << d_variable.getId() << "])";
         	}
         	break;
+        case OutputFormatSmt2:
+                if (d_coefficient == 1) {
+                        out << "var[" << d_variable.getId() << "]";
+                } else
+                if (d_coefficient == -1) {
+                        out << "(- var[" << d_variable.getId() << "])";
+                } else
+                if (d_coefficient >= 0) {
+                        out << "(* " << d_coefficient << " var[" << d_variable.getId() << "])";
+                } else {
+                        out << "(* (- " << -d_coefficient << ") var[" << d_variable.getId() << "])";
+                }
+                break;
         default:
         	out << d_coefficient << "*var[" << d_variable.getId() << "]";
         }
@@ -339,6 +380,19 @@ public:
         		out << "(* (~ " << -d_coefficient << ") " << name << ")";
         	}
         	break;
+        case OutputFormatSmt2:
+                if (d_coefficient == 1) {
+                        out << name;
+                } else
+                if (d_coefficient == -1) {
+                        out << "(- " << name << ")";
+                } else
+                if (d_coefficient >= 0) {
+                        out << "(* " << d_coefficient << " " << name << ")";
+                } else {
+                        out << "(* (- " << -d_coefficient << ") " << name << ")";
+                }
+                break;
         default:
         	out << d_coefficient << "*var[" << d_variable.getId() << "]";
         }
@@ -586,6 +640,19 @@ public:
             	out << ") " << d_constant << ")";
             } else {
             	out << ") (~ " << -d_constant << "))";
+            }
+            return;
+        }
+        if (format == OutputFormatSmt2) {
+                out << "(>= (+";
+            for (unsigned i = 0; i < d_size; ++ i) {
+                out << " ";
+                d_literals[i].print(out, resolver, format);
+            }
+            if (d_constant >= 0) {
+                out << ") " << d_constant << ")";
+            } else {
+                out << ") (- " << -d_constant << "))";
             }
             return;
         }

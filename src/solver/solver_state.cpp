@@ -128,7 +128,7 @@ void SolverState::newVariable(Variable var, const char* varName, bool addToQueue
         d_variableHeuristic[varId].value = 1.0;
         d_variableQueuePosition[varId] = d_variableQueueDynamic.push(var);
         d_variableQueueLinear.push(var);
-		d_variableInQueue[varId] = true;
+        d_variableInQueue[varId] = true;
     }
 }
 

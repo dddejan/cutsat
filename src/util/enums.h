@@ -23,6 +23,7 @@ namespace cutsat {
 
 enum OutputFormat {
     OutputFormatSmt,
+    OutputFormatSmt2,
     OutputFormatMps,
     OutputFormatOpb,
     OutputFormatCnf,
@@ -30,7 +31,7 @@ enum OutputFormat {
 };
 
 enum Verbosity {
-	VERBOSITY_NO_OUTPUT,
+    VERBOSITY_NO_OUTPUT,
     VERBOSITY_BASIC_INFO,
     VERBOSITY_DETAILED,
     VERBOSITY_EXTREME

@@ -472,7 +472,11 @@ ConstraintRef Solver::assertIntegerConstraint(vector<IntegerConstraintLiteral>& 
     return constraint;
 }
 
-Variable Solver::newVariable(VariableType type, const char* varName) {
+Variable Solver::newVariable(VariableType type, const char* varNameInput) {
+
+    string varName = varNameInput;
+    // Sanitize
+    replace(varName.begin(), varName.end(), ',', '_');
 
     CUTSAT_TRACE("solver") << "newVariable(" << type << "," << varName << ")" << endl;
 
@@ -482,7 +486,7 @@ Variable Solver::newVariable(VariableType type, const char* varName) {
 
     CUTSAT_TRACE("solver") << "newVariable() => " << var << endl;
 
-	d_state.newVariable(var, varName, !d_replaceVarsWithSlacks);
+    d_state.newVariable(var, varName.c_str(), !d_replaceVarsWithSlacks);
 
     if (!d_replaceVarsWithSlacks) {
     	d_variableNameToVariable[varName] = var;
@@ -806,263 +810,352 @@ void Solver::removeConstraint(ConstraintRef constraintRef, ConstraintClass const
     }
 }
 
+void Solver::printProblemSmt(std::ostream& output, ConstraintRef implied) const {
+  // Initialize the SMT output
+  output << "(benchmark cutsat" << endl;
+  output << ":logic QF_LIA" << endl;
+
+  // Add all the variables
+  stringstream bounds;
+  map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
+  map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
+  for (; var_it != var_it_end; ++ var_it) {
+      string variableName = var_it->first;
+      Variable variable = var_it->second;
+      output << ":extrafuns ((" << variableName << " Int" << "))" << endl;
+      if (d_initialTrailIndex >= 0 && d_state.hasLowerBound(variable, d_initialTrailIndex)) {
+          Integer bound = d_state.getLowerBound<TypeInteger>(variable, d_initialTrailIndex);
+          if (bound >= 0) {
+                  bounds << ":assumption (>= " << variableName << " " << bound << ")" << endl;
+          } else {
+                  bounds << ":assumption (>= " << variableName << " (~ " << -bound << "))" << endl;
+          }
+      }
+      if (d_initialTrailIndex >= 0 && d_state.hasUpperBound(variable, d_initialTrailIndex)) {
+          Integer bound = d_state.getUpperBound<TypeInteger>(variable, d_initialTrailIndex);
+          if (bound >= 0) {
+                  bounds << ":assumption (<= " << variableName << " " << bound << ")" << endl;
+          } else {
+                  bounds << ":assumption (<= " << variableName << " (~ " << -bound << "))" << endl;
+          }
+      }
+  }
+
+  // Output the bounds
+  output << bounds.str() << endl;
+
+  // Output the constraints
+  for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
+          output << ":assumption ";
+          switch(ConstraintManager::getType(d_problemConstraints[i])) {
+          case ConstraintTypeClause:
+              printConstraint(d_cm.get<ConstraintTypeClause>(d_problemConstraints[i]), output, OutputFormatSmt);
+              break;
+          case ConstraintTypeInteger:
+              printConstraint(d_cm.get<ConstraintTypeInteger>(d_problemConstraints[i]), output, OutputFormatSmt);
+              break;
+          default:
+              assert(false);
+      }
+          output << endl;
+  }
+
+  if (implied == ConstraintManager::NullConstraint) {
+          output << ":formula true" << endl;
+  } else {
+          output << ":formula (not ";
+      switch(ConstraintManager::getType(implied)) {
+          case ConstraintTypeClause:
+              printConstraint(d_cm.get<ConstraintTypeClause>(implied), output, OutputFormatSmt);
+              break;
+          case ConstraintTypeInteger:
+              printConstraint(d_cm.get<ConstraintTypeInteger>(implied), output, OutputFormatSmt);
+              break;
+          default:
+              assert(false);
+      }
+          output << ")" << endl;
+  }
+  output << ")" << endl;
+}
+
+void Solver::printProblemSmt2(std::ostream& output, ConstraintRef implied) const {
+  // Initialize the SMT output
+  output << "(set-logic QF_UFLIA)" << endl;
+  output << "(set-info :smt-lib-version 2.0)" << endl;
+
+  // Add all the variables
+  stringstream bounds;
+  map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
+  map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
+  for (; var_it != var_it_end; ++ var_it) {
+      string variableName = var_it->first;
+      Variable variable = var_it->second;
+      output << "(declare-fun " << variableName << " () Int)" << endl;
+      if (d_initialTrailIndex >= 0 && d_state.hasLowerBound(variable, d_initialTrailIndex)) {
+          Integer bound = d_state.getLowerBound<TypeInteger>(variable, d_initialTrailIndex);
+          if (bound >= 0) {
+                  bounds << "(assert (>= " << variableName << " " << bound << "))" << endl;
+          } else {
+                  bounds << "(assert (>= " << variableName << " (- " << -bound << ")))" << endl;
+          }
+      }
+      if (d_initialTrailIndex >= 0 && d_state.hasUpperBound(variable, d_initialTrailIndex)) {
+          Integer bound = d_state.getUpperBound<TypeInteger>(variable, d_initialTrailIndex);
+          if (bound >= 0) {
+                  bounds << "(assert (<= " << variableName << " " << bound << "))" << endl;
+          } else {
+                  bounds << "(assert (<= " << variableName << " (- " << -bound << ")))" << endl;
+          }
+      }
+  }
+
+  // Output the bounds
+  output << bounds.str() << endl;
+
+  // Output the constraints
+  for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
+          output << "(assert ";
+          switch(ConstraintManager::getType(d_problemConstraints[i])) {
+          case ConstraintTypeClause:
+              printConstraint(d_cm.get<ConstraintTypeClause>(d_problemConstraints[i]), output, OutputFormatSmt2);
+              break;
+          case ConstraintTypeInteger:
+              printConstraint(d_cm.get<ConstraintTypeInteger>(d_problemConstraints[i]), output, OutputFormatSmt2);
+              break;
+          default:
+              assert(false);
+          }
+          output << ")" << endl;
+  }
+
+  if (implied != ConstraintManager::NullConstraint) {
+          output << "(assert (not ";
+      switch(ConstraintManager::getType(implied)) {
+          case ConstraintTypeClause:
+              printConstraint(d_cm.get<ConstraintTypeClause>(implied), output, OutputFormatSmt2);
+              break;
+          case ConstraintTypeInteger:
+              printConstraint(d_cm.get<ConstraintTypeInteger>(implied), output, OutputFormatSmt2);
+              break;
+          default:
+              assert(false);
+      }
+          output << "))" << endl;
+  }
+}
+
+void Solver::printProblemMps(std::ostream& output, ConstraintRef implied) const {
+  // Model we will be creating
+  CoinMpsIO model;
+
+  // Add slack variables and count constraints
+  unsigned constraintsCount = d_problemConstraints.size();
+
+  // Setup the vectors
+  unsigned variablesCount = d_cm.getVariablesCount();
+
+  const char* names[variablesCount];
+  const char* ineq_names[constraintsCount];
+  double varBoundsLow[variablesCount];
+  double varBoundsUp[variablesCount];
+  char integrality[variablesCount];
+  double rowUb[constraintsCount];
+  double rowLb[constraintsCount];
+  double objective[variablesCount];
+
+  // Infinity
+  const double inf = model.getInfinity();
+
+  // Add all the variables
+  map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
+  map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
+  for (; var_it != var_it_end; ++ var_it) {
+      string variableName = var_it->first;
+      Variable variable = var_it->second;
+      unsigned variableIndex = variable.getId();
+      assert(variableIndex < variablesCount);
+      double lowerBound = -inf;
+      double upperBound = +inf;
+      if (d_state.hasLowerBound(variable)) {
+          lowerBound = NumberUtils<Integer>::toInt(d_state.getLowerBound<TypeInteger>(variable));
+      }
+      if (d_state.hasUpperBound(variable)) {
+          upperBound = NumberUtils<Integer>::toInt(d_state.getUpperBound<TypeInteger>(variable));
+      }
+      integrality [variableIndex] = 1;
+      objective   [variableIndex] = 0;
+      names       [variableIndex] = strdup(variableName.c_str());
+      varBoundsLow[variableIndex] = lowerBound;
+      varBoundsUp [variableIndex] = upperBound;
+  }
+
+  for(unsigned i = 0; i < variablesCount; ++ i) {
+      integrality[i] = 1;
+  }
+
+  // Add the constraints
+  CoinPackedMatrix matrix(false, 0, 0);
+  matrix.setDimensions(-1, variablesCount);
+
+  // Define the rows
+  for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
+      const IntegerConstraint& constraint = d_cm.get<ConstraintTypeInteger>(d_problemConstraints[i]);
+
+      int* indices = (int*)calloc(constraint.getSize(), sizeof(int));
+      double* elements = (double*)calloc(constraint.getSize(), sizeof(double));
+
+      for(unsigned lit = 0; lit < constraint.getSize(); ++ lit) {
+          const IntegerConstraintLiteral& literal = constraint.getLiteral(lit);
+          indices[lit] = literal.getVariable().getId();
+          elements[lit] = NumberUtils<Integer>::toInt(literal.getCoefficient());
+      }
+
+      rowUb[i] = +inf;
+      rowLb[i] = NumberUtils<Integer>::toInt(constraint.getConstant());
+
+      char row_name[100];
+      sprintf(row_name, "ROW%d", i);
+      ineq_names[i] = strdup(row_name);
+
+      matrix.appendRow(constraint.getSize(), indices, elements);
+
+      free(indices);
+      free(elements);
+  }
+
+  model.setMpsData(matrix, inf, varBoundsLow, varBoundsUp, objective, integrality, rowLb, rowUb, names, ineq_names);
+
+  model.setProblemName("CUTSAT");
+
+  // Create a temporary file and write the problem to it
+  char filename[100];
+  sprintf(filename, "/tmp/cutsat_XXXXXX");
+  if(mkstemp(filename) == -1) {
+          throw CutSatException("Could not create temporary file for mps output.");
+  }
+  model.writeMps(filename);
+  // Copy the file to the output stream
+  ifstream file(filename);
+  string line;
+  while (file.good()) {
+      getline(file, line);
+      output << line << endl;
+  }
+}
+
+void Solver::printProblemOpb(std::ostream& output, ConstraintRef implied) const {
+
+  // Add slack variables and count constraints
+  unsigned constraintsCount = d_problemConstraints.size();
+  unsigned variablesCount = d_cm.getVariablesCount();
+
+  // Add all the variables
+  stringstream bounds;
+  map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
+  map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
+  for (; var_it != var_it_end; ++ var_it) {
+      string variableName = var_it->first;
+      Variable variable = var_it->second;
+      unsigned variableIndex = variable.getId() + 1;
+      Integer lowerBound = 0;
+      Integer upperBound = 1;
+      if (d_state.hasLowerBound(variable, d_initialTrailIndex)) {
+          lowerBound = d_state.getLowerBound<TypeInteger>(variable, d_initialTrailIndex);
+      }
+      if (d_state.hasUpperBound(variable, d_initialTrailIndex)) {
+          upperBound = d_state.getUpperBound<TypeInteger>(variable, d_initialTrailIndex);
+      }
+      if (lowerBound >= 1) {
+          bounds << "+1 x" << variableIndex << " >= " << lowerBound << " ;" << endl;
+          constraintsCount ++;
+      }
+      if (upperBound <= 0) {
+          bounds << "-1 x" << variableIndex << " >= " << -lowerBound << " ;" << endl;
+          constraintsCount ++;
+      }
+  }
+
+  cout << "* #variable= " << variablesCount << " #constraint= " << constraintsCount << endl;
+  cout << bounds.str();
+
+  // Define the rows
+  for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
+      const IntegerConstraint& constraint = d_cm.get<ConstraintTypeInteger>(d_problemConstraints[i]);
+      for(unsigned lit = 0; lit < constraint.getSize(); ++ lit) {
+          const IntegerConstraintLiteral& literal = constraint.getLiteral(lit);
+          const Integer& coefficient = literal.getCoefficient();
+          unsigned variable = literal.getVariable().getId() + 1;
+          if (coefficient > 0) {
+                  cout << "+" << coefficient << " x" << variable << " ";
+          } else {
+                  cout << coefficient << " x" << variable << " ";
+          }
+      }
+      cout << ">= " << constraint.getConstant() << " ;" << endl;
+  }
+}
+
+void Solver::printProblemCnf(std::ostream& output, ConstraintRef implied) const {
+  // Add all the non-trivial variable bounds
+   stringstream bounds;
+   map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
+   map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
+   for (; var_it != var_it_end; ++ var_it) {
+       Variable variable = var_it->second;
+       unsigned variableIndex = variable.getId() + 1;
+       Integer lowerBound = d_state.getLowerBound<TypeInteger>(variable, d_initialTrailIndex);
+       Integer upperBound = d_state.getUpperBound<TypeInteger>(variable, d_initialTrailIndex);
+       if (lowerBound == 1) {
+           output << variableIndex << " 0" << endl;
+       }
+       if (upperBound == 0) {
+           bounds << -variableIndex << " 0" << endl;
+       }
+   }
+   // Output the constraints
+   for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
+           switch(ConstraintManager::getType(d_problemConstraints[i])) {
+           case ConstraintTypeClause:
+               printConstraint(d_cm.get<ConstraintTypeClause>(d_problemConstraints[i]), output, OutputFormatCnf);
+               break;
+           default:
+               assert(false);
+       }
+           output << endl;
+   }
+   // Output the negation of the implication
+   if (implied != ConstraintManager::NullConstraint) {
+           const ClauseConstraint& impliedClause = d_cm.get<ConstraintTypeClause>(implied);
+           for (unsigned i = 0; i < impliedClause.getSize(); ++ i) {
+                   const ClauseConstraintLiteral& literal = impliedClause.getLiteral(i);
+                   if (!literal.isNegated()) { output << literal.getVariable().getId() + 1; }
+                   else { output << - (literal.getVariable().getId() + 1); }
+                   output << " 0" << endl;
+           }
+   }
+}
+
 void Solver::printProblem(std::ostream& output, OutputFormat format, ConstraintRef implied) const {
-    if (format == OutputFormatSmt) {
-
-        // Initialize the SMT output
-        output << "(benchmark cutsat" << endl;
-        output << ":logic QF_LIA" << endl;
-
-        // Add all the variables
-        stringstream bounds;
-        map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
-        map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
-        for (; var_it != var_it_end; ++ var_it) {
-            string variableName = var_it->first;
-            Variable variable = var_it->second;
-            output << ":extrafuns ((" << variableName << " Int" << "))" << endl;
-            if (d_initialTrailIndex >= 0 && d_state.hasLowerBound(variable, d_initialTrailIndex)) {
-                Integer bound = d_state.getLowerBound<TypeInteger>(variable, d_initialTrailIndex);
-                if (bound >= 0) {
-                	bounds << ":assumption (>= " << variableName << " " << bound << ")" << endl;
-                } else {
-                	bounds << ":assumption (>= " << variableName << " (~ " << -bound << "))" << endl;
-                }
-            }
-            if (d_initialTrailIndex >= 0 && d_state.hasUpperBound(variable, d_initialTrailIndex)) {
-                Integer bound = d_state.getUpperBound<TypeInteger>(variable, d_initialTrailIndex);
-                if (bound >= 0) {
-                	bounds << ":assumption (<= " << variableName << " " << bound << ")" << endl;
-                } else {
-                	bounds << ":assumption (<= " << variableName << " (~ " << -bound << "))" << endl;
-                }
-            }
-        }
-
-        // Output the bounds
-        output << bounds.str() << endl;
-
-        // Output the constraints
-        for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
-        	output << ":assumption ";
-        	switch(ConstraintManager::getType(d_problemConstraints[i])) {
-                case ConstraintTypeClause:
-                    printConstraint(d_cm.get<ConstraintTypeClause>(d_problemConstraints[i]), output, OutputFormatSmt);
-                    break;
-                case ConstraintTypeInteger:
-                    printConstraint(d_cm.get<ConstraintTypeInteger>(d_problemConstraints[i]), output, OutputFormatSmt);
-                    break;
-                default:
-                    assert(false);
-            }
-        	output << endl;
-        }
-
-        if (implied == ConstraintManager::NullConstraint) {
-        	output << ":formula true" << endl;
-        } else {
-        	output << ":formula (not ";
-            switch(ConstraintManager::getType(implied)) {
-                case ConstraintTypeClause:
-                    printConstraint(d_cm.get<ConstraintTypeClause>(implied), output, OutputFormatSmt);
-                    break;
-                case ConstraintTypeInteger:
-                    printConstraint(d_cm.get<ConstraintTypeInteger>(implied), output, OutputFormatSmt);
-                    break;
-                default:
-                    assert(false);
-            }
-        	output << ")" << endl;
-        }
-        output << ")" << endl;
-    }
-    if (format == OutputFormatMps) {
-        // Model we will be creating
-        CoinMpsIO model;
-
-        // Add slack variables and count constraints
-        unsigned constraintsCount = d_problemConstraints.size();
-
-        // Setup the vectors
-        unsigned variablesCount = d_cm.getVariablesCount();
-
-        const char* names[variablesCount];
-        const char* ineq_names[constraintsCount];
-        double varBoundsLow[variablesCount];
-        double varBoundsUp[variablesCount];
-        char integrality[variablesCount];
-        double rowUb[constraintsCount];
-        double rowLb[constraintsCount];
-        double objective[variablesCount];
-
-        // Infinity
-        const double inf = model.getInfinity();
-
-        // Add all the variables
-        map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
-        map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
-        for (; var_it != var_it_end; ++ var_it) {
-            string variableName = var_it->first;
-            Variable variable = var_it->second;
-            unsigned variableIndex = variable.getId();
-            assert(variableIndex < variablesCount);
-            double lowerBound = -inf;
-            double upperBound = +inf;
-            if (d_state.hasLowerBound(variable)) {
-                lowerBound = NumberUtils<Integer>::toInt(d_state.getLowerBound<TypeInteger>(variable));
-            }
-            if (d_state.hasUpperBound(variable)) {
-                upperBound = NumberUtils<Integer>::toInt(d_state.getUpperBound<TypeInteger>(variable));
-            }
-            integrality [variableIndex] = 1;
-            objective   [variableIndex] = 0;
-            names       [variableIndex] = strdup(variableName.c_str());
-            varBoundsLow[variableIndex] = lowerBound;
-            varBoundsUp [variableIndex] = upperBound;
-        }
-
-        for(unsigned i = 0; i < variablesCount; ++ i) {
-            integrality[i] = 1;
-        }
-
-        // Add the constraints
-        CoinPackedMatrix matrix(false, 0, 0);
-        matrix.setDimensions(-1, variablesCount);
-
-        // Define the rows
-        for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
-            const IntegerConstraint& constraint = d_cm.get<ConstraintTypeInteger>(d_problemConstraints[i]);
-
-            int* indices = (int*)calloc(constraint.getSize(), sizeof(int));
-            double* elements = (double*)calloc(constraint.getSize(), sizeof(double));
-
-            for(unsigned lit = 0; lit < constraint.getSize(); ++ lit) {
-                const IntegerConstraintLiteral& literal = constraint.getLiteral(lit);
-                indices[lit] = literal.getVariable().getId();
-                elements[lit] = NumberUtils<Integer>::toInt(literal.getCoefficient());
-            }
-
-            rowUb[i] = +inf;
-            rowLb[i] = NumberUtils<Integer>::toInt(constraint.getConstant());
-
-            char row_name[100];
-            sprintf(row_name, "ROW%d", i);
-            ineq_names[i] = strdup(row_name);
-
-            matrix.appendRow(constraint.getSize(), indices, elements);
-
-            free(indices);
-            free(elements);
-        }
-
-        model.setMpsData(matrix, inf, varBoundsLow, varBoundsUp, objective, integrality, rowLb, rowUb, names, ineq_names);
-
-        model.setProblemName("CUTSAT");
-
-        // Create a temporary file and write the problem to it
-        char filename[100];
-        sprintf(filename, "/tmp/cutsat_XXXXXX");
-        if(mkstemp(filename) == -1) {
-        	throw CutSatException("Could not create temporary file for mps output.");
-        }
-        model.writeMps(filename);
-        // Copy the file to the output stream
-        ifstream file(filename);
-        string line;
-        while (file.good()) {
-            getline(file, line);
-            output << line << endl;
-        }
-    }
-    if (format == OutputFormatOpb) {
-        // Add slack variables and count constraints
-        unsigned constraintsCount = d_problemConstraints.size();
-        unsigned variablesCount = d_cm.getVariablesCount();
-
-        // Add all the variables
-        stringstream bounds;
-        map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
-        map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
-        for (; var_it != var_it_end; ++ var_it) {
-            string variableName = var_it->first;
-            Variable variable = var_it->second;
-            unsigned variableIndex = variable.getId() + 1;
-            Integer lowerBound = 0;
-            Integer upperBound = 1;
-            if (d_state.hasLowerBound(variable, d_initialTrailIndex)) {
-                lowerBound = d_state.getLowerBound<TypeInteger>(variable, d_initialTrailIndex);
-            }
-            if (d_state.hasUpperBound(variable, d_initialTrailIndex)) {
-                upperBound = d_state.getUpperBound<TypeInteger>(variable, d_initialTrailIndex);
-            }
-            if (lowerBound >= 1) {
-            	bounds << "+1 x" << variableIndex << " >= " << lowerBound << " ;" << endl;
-            	constraintsCount ++;
-            }
-            if (upperBound <= 0) {
-            	bounds << "-1 x" << variableIndex << " >= " << -lowerBound << " ;" << endl;
-            	constraintsCount ++;
-            }
-        }
-
-        cout << "* #variable= " << variablesCount << " #constraint= " << constraintsCount << endl;
-        cout << bounds.str();
-
-        // Define the rows
-        for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
-            const IntegerConstraint& constraint = d_cm.get<ConstraintTypeInteger>(d_problemConstraints[i]);
-            for(unsigned lit = 0; lit < constraint.getSize(); ++ lit) {
-                const IntegerConstraintLiteral& literal = constraint.getLiteral(lit);
-                const Integer& coefficient = literal.getCoefficient();
-                unsigned variable = literal.getVariable().getId() + 1;
-                if (coefficient > 0) {
-                	cout << "+" << coefficient << " x" << variable << " ";
-                } else {
-                	cout << coefficient << " x" << variable << " ";
-                }
-            }
-            cout << ">= " << constraint.getConstant() << " ;" << endl;
-        }
-    }
-    if (format == OutputFormatCnf) {
-        // Add all the non-trivial variable bounds
-        stringstream bounds;
-        map<string, Variable>::const_iterator var_it = d_variableNameToVariable.begin();
-        map<string, Variable>::const_iterator var_it_end = d_variableNameToVariable.end();
-        for (; var_it != var_it_end; ++ var_it) {
-            Variable variable = var_it->second;
-            unsigned variableIndex = variable.getId() + 1;
-            Integer lowerBound = d_state.getLowerBound<TypeInteger>(variable, d_initialTrailIndex);
-            Integer upperBound = d_state.getUpperBound<TypeInteger>(variable, d_initialTrailIndex);
-            if (lowerBound == 1) {
-            	output << variableIndex << " 0" << endl;
-            }
-            if (upperBound == 0) {
-            	bounds << -variableIndex << " 0" << endl;
-            }
-        }
-        // Output the constraints
-        for (unsigned i = 0; i < d_problemConstraints.size(); ++ i) {
-        	switch(ConstraintManager::getType(d_problemConstraints[i])) {
-                case ConstraintTypeClause:
-                    printConstraint(d_cm.get<ConstraintTypeClause>(d_problemConstraints[i]), output, OutputFormatCnf);
-                    break;
-                default:
-                    assert(false);
-            }
-        	output << endl;
-        }
-        // Output the negation of the implication
-        if (implied != ConstraintManager::NullConstraint) {
-        	const ClauseConstraint& impliedClause = d_cm.get<ConstraintTypeClause>(implied);
-        	for (unsigned i = 0; i < impliedClause.getSize(); ++ i) {
-        		const ClauseConstraintLiteral& literal = impliedClause.getLiteral(i);
-        		if (!literal.isNegated()) { output << literal.getVariable().getId() + 1; }
-        		else { output << - (literal.getVariable().getId() + 1); }
-        		output << " 0" << endl;
-        	}
-        }
-    }
+  switch (format) {
+  case OutputFormatSmt:
+    printProblemSmt(output, implied);
+    break;
+  case OutputFormatSmt2:
+    printProblemSmt2(output, implied);
+    break;
+  case OutputFormatMps:
+    printProblemMps(output, implied);
+    break;
+  case OutputFormatOpb:
+    printProblemOpb(output, implied);
+    break;
+  case OutputFormatCnf:
+    printProblemCnf(output, implied);
+    break;
+  default:
+    assert(0);
+  }
 }
 
 void Solver::collectGarbage() {
